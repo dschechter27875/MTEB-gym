@@ -1,7 +1,5 @@
 # MTEB Gym 🏋️
 
-**AlpacaEval-style offline arena for embedding models.**
-
 Run fast, LLM-judged pairwise evaluations of any embedding model — no human labels required.
 Based on the [MTEB Gym discussion](https://github.com/embeddings-benchmark/mteb/discussions/3068) by Muennighoff, KennethEnevoldsen, and orionw.
 

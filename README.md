@@ -1,7 +1,7 @@
-# MTEB Gym 🏋️
+# MTEB Gym
 
 Run fast, LLM-judged pairwise evaluations of any embedding model — no human labels required.
-Based on the [MTEB Gym discussion](https://github.com/embeddings-benchmark/mteb/discussions/3068) by Muennighoff, KennethEnevoldsen, and orionw.
+
 
 ```
 corpus → synthetic queries (LLM) → retrieve (Model A + B) → judge (LLM pairwise) → ELO

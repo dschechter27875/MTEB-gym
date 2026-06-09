@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTEB Gym — Embedding Model Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0b;
+  --surface: #111114;
+  --surface2: #18181d;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8e8e6;
+  --text2: #8a8a88;
+  --text3: #4a4a48;
+  --accent: #c8f060;
+  --accent2: #8eb840;
+  --blue: #5b9cf6;
+  --purple: #a78bfa;
+  --amber: #f59e0b;
+  --red: #f87171;
+  --teal: #2dd4bf;
+  --mono: 'DM Mono', monospace;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* Grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* Header */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 32px 0 28px;
+}
+.header-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.logo-area {}
+.logo-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.logo-title {
+  font-family: var(--serif);
+  font-size: 38px;
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--text);
+}
+.logo-title em { font-style: italic; color: var(--accent); }
+.logo-sub {
+  margin-top: 8px;
+  color: var(--text2);
+  font-size: 13px;
+  max-width: 480px;
+}
+.header-stats {
+  display: flex;
+  gap: 32px;
+  flex-shrink: 0;
+}
+.stat-item { text-align: right; }
+.stat-num {
+  font-family: var(--mono);
+  font-size: 24px;
+  color: var(--text);
+  display: block;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.tab-group {
+  display: flex;
+  gap: 2px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+}
+.tab {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 16px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.tab.active {
+  background: var(--surface);
+  color: var(--accent);
+  border: 1px solid var(--border2);
+}
+.tab:hover:not(.active) { color: var(--text); }
+
+.filter-group { display: flex; gap: 8px; align-items: center; }
+.filter-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+.filter-select:hover { border-color: var(--border2); }
+
+.search-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  width: 220px;
+  outline: none;
+}
+.search-input::placeholder { color: var(--text3); }
+.search-input:focus { border-color: var(--border2); }
+
+/* Main leaderboard table */
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+.leaderboard-table thead th {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.leaderboard-table thead th:hover { color: var(--text2); }
+.leaderboard-table thead th.sorted { color: var(--accent); }
+.leaderboard-table thead th.right { text-align: right; }
+.leaderboard-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+  animation: rowIn 0.3s ease both;
+}
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.leaderboard-table tbody tr:hover { background: var(--surface2); }
+.leaderboard-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+.rank-cell {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text3);
+  width: 40px;
+}
+.rank-1 { color: var(--amber) !important; }
+.rank-2 { color: var(--text2) !important; }
+.rank-3 { color: #c98b5c !important; }
+
+.model-cell { min-width: 220px; }
+.model-name {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 2px;
+}
+.model-org {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+}
+.model-badges { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+.badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid;
+}
+.badge-new { color: var(--accent); border-color: rgba(200,240,96,0.3); background: rgba(200,240,96,0.06); }
+.badge-api { color: var(--blue); border-color: rgba(91,156,246,0.3); background: rgba(91,156,246,0.06); }
+.badge-open { color: var(--teal); border-color: rgba(45,212,191,0.3); background: rgba(45,212,191,0.06); }
+
+.elo-cell {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--text);
+  text-align: right;
+  white-space: nowrap;
+}
+.elo-ci {
+  font-size: 11px;
+  color: var(--text3);
+  display: block;
+  margin-top: 1px;
+}
+
+/* ELO bar visualization */
+.elo-bar-cell { width: 120px; padding-left: 8px; }
+.elo-bar-wrap { position: relative; height: 4px; background: var(--surface2); border-radius: 2px; }
+.elo-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.winrate-cell {
+  font-family: var(--mono);
+  font-size: 13px;
+  text-align: right;
+}
+.winrate-high { color: var(--accent); }
+.winrate-mid  { color: var(--text2); }
+.winrate-low  { color: var(--red); }
+
+.games-cell {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text3);
+  text-align: right;
+  white-space: nowrap;
+}
+.wlt-cell {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  text-align: right;
+  white-space: nowrap;
+}
+.wlt-w { color: var(--accent); }
+.wlt-l { color: var(--red); }
+.wlt-t { color: var(--text3); }
+
+/* Delta indicator */
+.delta {
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-left: 6px;
+}
+.delta-up   { color: var(--accent); }
+.delta-down { color: var(--red); }
+
+/* Pairwise matrix tab */
+.matrix-wrap {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+.matrix-table {
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.matrix-table th, .matrix-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  text-align: center;
+  white-space: nowrap;
+}
+.matrix-table th {
+  color: var(--text3);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--surface);
+}
+.matrix-table .row-header {
+  text-align: left;
+  color: var(--text2);
+  background: var(--surface);
+}
+.cell-high { background: rgba(200,240,96,0.15); color: var(--accent); }
+.cell-mid  { background: rgba(255,255,255,0.03); color: var(--text2); }
+.cell-low  { background: rgba(248,113,113,0.1); color: var(--red); }
+.cell-self { background: var(--surface2); color: var(--text3); }
+
+/* Verdicts tab */
+.verdict-list { margin-top: 16px; }
+.verdict-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s;
+}
+.verdict-card:hover { border-color: var(--border2); }
+.verdict-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.verdict-query {
+  font-size: 14px;
+  color: var(--text);
+  flex: 1;
+  margin-right: 16px;
+}
+.verdict-winner {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.winner-a { background: rgba(91,156,246,0.15); color: var(--blue); border: 1px solid rgba(91,156,246,0.3); }
+.winner-b { background: rgba(167,139,250,0.15); color: var(--purple); border: 1px solid rgba(167,139,250,0.3); }
+.winner-tie { background: rgba(255,255,255,0.05); color: var(--text3); border: 1px solid var(--border); }
+.verdict-reasoning {
+  font-size: 12px;
+  color: var(--text2);
+  font-style: italic;
+}
+.verdict-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 8px;
+}
+.conf-high { color: var(--accent); }
+.conf-med  { color: var(--amber); }
+.conf-low  { color: var(--red); }
+
+/* Panel content */
+.panel { display: none; padding: 16px 0; }
+.panel.active { display: block; }
+
+/* Footer */
+footer {
+  margin-top: 64px;
+  padding: 32px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-left {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+}
+.footer-links { display: flex; gap: 24px; }
+.footer-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer-link:hover { color: var(--accent); }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 64px 0;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header-inner { flex-direction: column; align-items: flex-start; }
+  .header-stats { flex-direction: row; }
+  .logo-title { font-size: 28px; }
+  .elo-bar-cell { display: none; }
+  .wlt-cell { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <div class="logo-area">
+        <div class="logo-eyebrow">embeddings-benchmark / mteb</div>
+        <h1 class="logo-title">MTEB <em>Gym</em></h1>
+        <p class="logo-sub">AlpacaEval-style offline arena for embedding models — LLM-as-judge pairwise evaluation across retrieval, STS, and clustering.</p>
+      </div>
+      <div class="header-stats">
+        <div class="stat-item">
+          <span class="stat-num" id="stat-models">—</span>
+          <span class="stat-label">Models</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="stat-battles">—</span>
+          <span class="stat-label">Battles</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="stat-corpora">—</span>
+          <span class="stat-label">Corpora</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="tab-group">
+      <button class="tab active" onclick="switchTab('leaderboard', this)">Leaderboard</button>
+      <button class="tab" onclick="switchTab('pairwise', this)">Pairwise matrix</button>
+      <button class="tab" onclick="switchTab('verdicts', this)">Verdicts</button>
+    </div>
+    <div class="filter-group">
+      <input class="search-input" placeholder="Filter models..." id="model-search" oninput="filterModels()">
+      <select class="filter-select" onchange="filterModels()" id="sort-select">
+        <option value="rating">Sort: ELO</option>
+        <option value="win_rate">Sort: Win rate</option>
+        <option value="games">Sort: Games played</option>
+      </select>
+      <select class="filter-select" onchange="filterByType(this.value)" id="type-select">
+        <option value="all">All task types</option>
+        <option value="retrieval">Retrieval</option>
+        <option value="sts">STS</option>
+        <option value="clustering">Clustering</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Leaderboard panel -->
+  <div id="panel-leaderboard" class="panel active">
+    <table class="leaderboard-table" id="lb-table">
+      <thead>
+        <tr>
+          <th onclick="sortBy('rank')">#</th>
+          <th onclick="sortBy('name')">Model</th>
+          <th class="right sorted" onclick="sortBy('rating')">ELO ▾</th>
+          <th class="right"></th>
+          <th class="right" onclick="sortBy('win_rate')">Win%</th>
+          <th class="right" onclick="sortBy('games')">W / L / T</th>
+          <th class="right" onclick="sortBy('games')">Games</th>
+        </tr>
+      </thead>
+      <tbody id="lb-body">
+        <tr><td colspan="7" class="empty-state">Loading leaderboard data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pairwise matrix panel -->
+  <div id="panel-pairwise" class="panel">
+    <div class="matrix-wrap" id="matrix-wrap">
+      <div class="empty-state">No pairwise data loaded.</div>
+    </div>
+  </div>
+
+  <!-- Verdicts panel -->
+  <div id="panel-verdicts" class="panel">
+    <div class="verdict-list" id="verdict-list">
+      <div class="empty-state">No verdicts loaded.</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-left">MTEB Gym · embeddings-benchmark/mteb · Apache-2.0</div>
+    <div class="footer-links">
+      <a href="https://github.com/embeddings-benchmark/mteb" class="footer-link">GitHub</a>
+      <a href="https://huggingface.co/spaces/mteb/leaderboard" class="footer-link">MTEB Leaderboard</a>
+      <a href="https://arxiv.org/abs/2210.07316" class="footer-link">Paper</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ─── Demo data (replace with gym.export_leaderboard_json() output) ──────────
+const DEMO_DATA = {
+  models: [
+    { rank:1, name:"Alibaba-NLP/gte-Qwen2-7B-instruct", rating:1214, ci_lower:1190, ci_upper:1238, wins:87, losses:23, ties:11, games:121, win_rate:74.4, org:"Alibaba NLP", tags:["api"], type:"retrieval" },
+    { rank:2, name:"text-embedding-3-large", rating:1187, ci_lower:1164, ci_upper:1210, wins:79, losses:31, ties:15, games:125, win_rate:68.6, org:"OpenAI", tags:["api"], type:"retrieval" },
+    { rank:3, name:"e5-mistral-7b-instruct", rating:1156, ci_lower:1130, ci_upper:1182, wins:71, losses:38, ties:14, games:123, win_rate:63.0, org:"Microsoft", tags:["open"], type:"retrieval" },
+    { rank:4, name:"all-mpnet-base-v2", rating:1098, ci_lower:1074, ci_upper:1122, wins:58, losses:52, ties:13, games:123, win_rate:52.4, org:"SBERT", tags:["open"], type:"retrieval" },
+    { rank:5, name:"gte-large-en-v1.5", rating:1067, ci_lower:1044, ci_upper:1090, wins:51, losses:59, ties:12, games:122, win_rate:46.7, org:"Alibaba", tags:["open","new"], type:"retrieval" },
+    { rank:6, name:"bge-large-en-v1.5", rating:1032, ci_lower:1008, ci_upper:1056, wins:44, losses:66, ties:11, games:121, win_rate:41.3, org:"BAAI", tags:["open"], type:"retrieval" },
+    { rank:7, name:"all-MiniLM-L6-v2",  rating: 986, ci_lower: 963, ci_upper:1009, wins:35, losses:76, ties:10, games:121, win_rate:33.1, org:"SBERT", tags:["open"], type:"retrieval" },
+  ],
+  pairwise: {
+    "gte-Qwen2-7B": { "gte-Qwen2-7B": null, "text-embedding-3-large": 0.71, "e5-mistral-7b": 0.63, "all-mpnet-base-v2": 0.80, "all-MiniLM-L6-v2": 0.88 },
+    "text-embedding-3-large": { "gte-Qwen2-7B": 0.29, "text-embedding-3-large": null, "e5-mistral-7b": 0.58, "all-mpnet-base-v2": 0.73, "all-MiniLM-L6-v2": 0.81 },
+    "e5-mistral-7b": { "gte-Qwen2-7B": 0.37, "text-embedding-3-large": 0.42, "e5-mistral-7b": null, "all-mpnet-base-v2": 0.65, "all-MiniLM-L6-v2": 0.78 },
+    "all-mpnet-base-v2": { "gte-Qwen2-7B": 0.20, "text-embedding-3-large": 0.27, "e5-mistral-7b": 0.35, "all-mpnet-base-v2": null, "all-MiniLM-L6-v2": 0.61 },
+    "all-MiniLM-L6-v2": { "gte-Qwen2-7B": 0.12, "text-embedding-3-large": 0.19, "e5-mistral-7b": 0.22, "all-mpnet-base-v2": 0.39, "all-MiniLM-L6-v2": null },
+  },
+  verdicts: [
+    { query: "What are the long-term cardiovascular effects of statins in elderly patients?", winner:"A", confidence:"high", reasoning:"System A retrieved highly relevant clinical trial summaries directly addressing the query, while System B returned general cardiology overviews.", model_a:"gte-Qwen2-7B", model_b:"MiniLM-L6-v2", corpus:"NFCorpus" },
+    { query: "Mechanisms of antibiotic resistance in gram-negative bacteria", winner:"A", confidence:"high", reasoning:"System A's top results focused precisely on resistance mechanisms, whereas System B mixed in tangential pharmacology content.", model_a:"gte-Qwen2-7B", model_b:"mpnet-base-v2", corpus:"NFCorpus" },
+    { query: "Role of CRISPR-Cas9 in gene therapy for inherited disorders", winner:"tie", confidence:"medium", reasoning:"Both systems retrieved relevant gene therapy documents; System A had slightly higher precision but System B found a key review article.", model_a:"e5-mistral-7b", model_b:"text-embedding-3-large", corpus:"NFCorpus" },
+    { query: "Epidemiology of type 2 diabetes in South Asian populations", winner:"B", confidence:"high", reasoning:"System B's results were more population-specific and included recent epidemiological studies; System A returned more general diabetes content.", model_a:"MiniLM-L6-v2", model_b:"text-embedding-3-large", corpus:"NFCorpus" },
+    { query: "Neural mechanisms of pain perception and chronic pain syndromes", winner:"A", confidence:"medium", reasoning:"System A retrieved neuroscience-focused content that better addressed the query mechanism. System B returned pain management clinical guides instead.", model_a:"bge-large-en-v1.5", model_b:"all-mpnet-base-v2", corpus:"NFCorpus" },
+  ],
+  total_verdicts: 847,
+};
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let currentData = DEMO_DATA;
+let sortField = 'rating';
+let sortAsc = false;
+let activeTab = 'leaderboard';
+
+// Try loading real data from leaderboard.json
+fetch('leaderboard.json')
+  .then(r => r.json())
+  .then(d => { currentData = d; renderAll(); })
+  .catch(() => { renderAll(); }); // fall back to demo
+
+function renderAll() {
+  updateStats();
+  renderLeaderboard();
+  renderMatrix();
+  renderVerdicts();
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-models').textContent = currentData.models.length;
+  document.getElementById('stat-battles').textContent =
+    (currentData.total_verdicts || 0).toLocaleString();
+  const corpora = new Set(currentData.verdicts?.map(v => v.corpus) || ['—']);
+  document.getElementById('stat-corpora').textContent = corpora.size;
+}
+
+// ─── Leaderboard ─────────────────────────────────────────────────────────────
+function renderLeaderboard() {
+  const query = document.getElementById('model-search').value.toLowerCase();
+  let models = [...currentData.models];
+
+  if (query) models = models.filter(m => m.name.toLowerCase().includes(query));
+
+  models.sort((a, b) => {
+    const va = a[sortField] ?? 0, vb = b[sortField] ?? 0;
+    return sortAsc ? va - vb : vb - va;
+  });
+
+  const maxElo = Math.max(...models.map(m => m.rating));
+  const minElo = Math.min(...models.map(m => m.rating));
+  const eloRange = maxElo - minElo || 1;
+
+  const body = document.getElementById('lb-body');
+  if (!models.length) {
+    body.innerHTML = '<tr><td colspan="7" class="empty-state">No models match filter.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = models.map((m, i) => {
+    const rank = i + 1;
+    const rankClass = rank <= 3 ? `rank-${rank}` : '';
+    const wr = m.win_rate;
+    const wrClass = wr >= 60 ? 'winrate-high' : wr >= 45 ? 'winrate-mid' : 'winrate-low';
+    const ci = m.ci_lower && m.ci_upper ? `±${Math.round((m.ci_upper - m.ci_lower)/2)}` : '';
+
+    const barPct = Math.round(((m.rating - minElo) / eloRange) * 100);
+    const barColor = rank === 1 ? '#c8f060' : rank === 2 ? '#8eb840' : rank <= 5 ? '#5b9cf6' : '#4a4a48';
+
+    const shortName = m.name.split('/').pop();
+    const org = m.name.includes('/') ? m.name.split('/')[0] : (m.org || '');
+    const tags = (m.tags || []).map(t =>
+      `<span class="badge badge-${t}">${t}</span>`
+    ).join('');
+
+    return `<tr style="animation-delay:${i*0.03}s">
+      <td class="rank-cell ${rankClass}">${rank}</td>
+      <td class="model-cell">
+        <span class="model-name">${shortName}</span>
+        <span class="model-org">${org}</span>
+        <div class="model-badges">${tags}</div>
+      </td>
+      <td class="elo-cell">
+        ${m.rating}<span class="elo-ci">${ci}</span>
+      </td>
+      <td class="elo-bar-cell">
+        <div class="elo-bar-wrap">
+          <div class="elo-bar-fill" style="width:${barPct}%;background:${barColor}"></div>
+        </div>
+      </td>
+      <td class="winrate-cell ${wrClass}">${wr.toFixed(1)}%</td>
+      <td class="wlt-cell">
+        <span class="wlt-w">${m.wins}</span> /
+        <span class="wlt-l">${m.losses}</span> /
+        <span class="wlt-t">${m.ties}</span>
+      </td>
+      <td class="games-cell">${m.games}</td>
+    </tr>`;
+  }).join('');
+}
+
+function sortBy(field) {
+  if (sortField === field) sortAsc = !sortAsc;
+  else { sortField = field; sortAsc = false; }
+  document.querySelectorAll('.leaderboard-table th').forEach(th => th.classList.remove('sorted'));
+  renderLeaderboard();
+}
+
+function filterModels() { renderLeaderboard(); }
+function filterByType() { renderLeaderboard(); }
+
+// ─── Pairwise matrix ──────────────────────────────────────────────────────────
+function renderMatrix() {
+  const wrap = document.getElementById('matrix-wrap');
+  const matrix = currentData.pairwise;
+  if (!matrix || !Object.keys(matrix).length) return;
+
+  const models = Object.keys(matrix);
+  const shortNames = models.map(m => m.split('/').pop());
+
+  let html = '<table class="matrix-table"><thead><tr><th class="row-header">Model ↓ vs →</th>';
+  shortNames.forEach(n => { html += `<th>${n}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  models.forEach((rowModel, ri) => {
+    html += `<tr><td class="row-header">${shortNames[ri]}</td>`;
+    models.forEach(colModel => {
+      if (rowModel === colModel) {
+        html += '<td class="cell-self">—</td>';
+      } else {
+        const val = matrix[rowModel]?.[colModel];
+        if (val === null || val === undefined) {
+          html += '<td class="cell-mid">?</td>';
+        } else {
+          const pct = Math.round(val * 100);
+          const cls = pct >= 60 ? 'cell-high' : pct <= 40 ? 'cell-low' : 'cell-mid';
+          html += `<td class="${cls}">${pct}%</td>`;
+        }
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ─── Verdicts ────────────────────────────────────────────────────────────────
+function renderVerdicts() {
+  const list = document.getElementById('verdict-list');
+  const verdicts = currentData.verdicts;
+  if (!verdicts || !verdicts.length) return;
+
+  list.innerHTML = verdicts.map(v => {
+    const wClass = v.winner === 'A' ? 'winner-a' : v.winner === 'B' ? 'winner-b' : 'winner-tie';
+    const wLabel = v.winner === 'A' ? `${v.model_a} wins` :
+                   v.winner === 'B' ? `${v.model_b} wins` : 'Tie';
+    const confClass = v.confidence === 'high' ? 'conf-high' : v.confidence === 'medium' ? 'conf-med' : 'conf-low';
+    return `<div class="verdict-card">
+      <div class="verdict-header">
+        <span class="verdict-query">${v.query}</span>
+        <span class="verdict-winner ${wClass}">${wLabel}</span>
+      </div>
+      <p class="verdict-reasoning">"${v.reasoning}"</p>
+      <div class="verdict-meta">
+        <span class="${confClass}">confidence: ${v.confidence}</span>
+        &nbsp;·&nbsp; ${v.model_a} vs ${v.model_b}
+        ${v.corpus ? `&nbsp;·&nbsp; corpus: ${v.corpus}` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  btn.classList.add('active');
+  activeTab = name;
+}
+
+// Initial render
+renderAll();
+</script>
+</body>
+</html>

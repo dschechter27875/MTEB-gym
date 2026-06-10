@@ -203,7 +203,7 @@ class RetrievalHarness:
             cache_key = hashlib.md5(
                 (model_name + "".join(list(corpus.keys())[:20])).encode()
             ).hexdigest()[:12]
-            cache_path = self.cache_dir / f"corpus_{model_name}_{cache_key}.npy"
+            cache_path = self.cache_dir / ("corpus_" + model_name.replace("/", "_") + "_" + cache_key + ".npy")
 
             if cache_path.exists():
                 print(f"[Harness] Loading cached corpus embeddings from {cache_path}")

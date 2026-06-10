@@ -115,3 +115,28 @@ class MockLLMClient:
         h = int(hashlib.md5(content[:50].encode()).hexdigest(), 16)
         winner = "A" if h % 3 != 0 else ("B" if h % 3 == 1 else "tie")
         return f'{{"winner": "{winner}", "confidence": "medium", "reasoning": "mock judgment"}}'
+
+
+class Qwen3Client:
+    """
+    Adapter for Qwen3-4B-Instruct via HuggingFace Inference API.
+    Free to use — no API key needed for public models.
+    """
+
+    def __init__(
+        self,
+        model: str = "Qwen/Qwen3-4B-Instruct",
+        max_tokens: int = 512,
+        token: str = None,
+    ):
+        from huggingface_hub import InferenceClient
+        self.client = InferenceClient(model=model, token=token)
+        self.model = model
+        self.max_tokens = max_tokens
+
+    def chat(self, messages: list[dict]) -> str:
+        response = self.client.chat_completion(
+            messages=messages,
+            max_tokens=self.max_tokens,
+        )
+        return response.choices[0].message.content

@@ -48,8 +48,8 @@ def run_tournament(
     task.load_data()
     corpus_raw = task.corpus.get("test", {})
     corpus = {
-        did: (doc.get("title", "") + " " + doc.get("text", "")).strip()
-        for did, doc in corpus_raw.items()
+        did: text
+        for did, text in corpus_raw.items()
     }
     print(f"Corpus: {len(corpus)} docs")
 
